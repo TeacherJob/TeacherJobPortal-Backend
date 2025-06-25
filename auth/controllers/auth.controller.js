@@ -9,6 +9,22 @@ import crypto from 'crypto';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const getCookieOptions = () => {
+    const options = {
+        httpOnly: true,
+        path: '/',
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+        options.secure = true;
+        options.sameSite = 'None';
+        if (process.env.COOKIE_DOMAIN) {
+            options.domain = process.env.COOKIE_DOMAIN;
+        }
+    }
+    return options;
+};
+
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d',
@@ -17,21 +33,11 @@ const generateToken = (id, role) => {
 
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user._id, user.role);
-
-    const cookieOptions = {
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        httpOnly: true,
-        path: '/',
-        // sameSite: 'none',
-    };
-
-    if (process.env.NODE_ENV === 'production') {
-        cookieOptions.secure = true;
-        cookieOptions.sameSite = 'None';
-    }
+    const options = getCookieOptions();
+    options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     res.status(statusCode)
-        .cookie('token', token, cookieOptions)
+        .cookie('token', token, options)
         .json({
             success: true,
             user: { id: user._id, email: user.email, role: user.role }
@@ -124,19 +130,11 @@ export const googleLogin = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-    const cookieOptions = {
-        expires: new Date(0), // Set expiration to a past date
-        httpOnly: true,
-        path: '/',
-    };
-
-    if (process.env.NODE_ENV === 'production') {
-        cookieOptions.secure = true;
-        cookieOptions.sameSite = 'None';
-    }
+    const options = getCookieOptions();
+    options.expires = new Date(0);
 
     res.status(200)
-        .cookie('token', '', cookieOptions) // Set cookie to an empty value
+        .cookie('token', '', options)
         .json({ success: true, message: 'Logged out successfully' });
 };
 
@@ -182,18 +180,11 @@ export const deleteAccount = async (req, res) => {
 
         await user.deleteOne();
         
-        const cookieOptions = {
-            expires: new Date(0),
-            httpOnly: true,
-            path: '/',
-        };
-        if (process.env.NODE_ENV === 'production') {
-            cookieOptions.secure = true;
-            cookieOptions.sameSite = 'None';
-        }
+        const options = getCookieOptions();
+        options.expires = new Date(0);
 
         res.status(200)
-            .cookie('token', '', cookieOptions)
+            .cookie('token', '', options)
             .json({ success: true, message: 'Account deleted successfully' });
 
     } catch (error) {
