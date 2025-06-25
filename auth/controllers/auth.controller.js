@@ -10,19 +10,13 @@ import crypto from 'crypto';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const getCookieOptions = () => {
-    const options = {
+    return {
         httpOnly: true,
         path: '/',
+        secure: true,
+        sameSite: 'None',
+        domain: '.vercel.app',
     };
-
-    if (process.env.NODE_ENV === 'production') {
-        options.secure = true;
-        options.sameSite = 'None';
-        if (process.env.COOKIE_DOMAIN) {
-            options.domain = process.env.COOKIE_DOMAIN;
-        }
-    }
-    return options;
 };
 
 const generateToken = (id, role) => {
@@ -44,8 +38,6 @@ const sendTokenResponse = (user, statusCode, res) => {
         });
 };
 
-// ... baaki ke saare functions (signup, login, logout, etc.) jaise hain, waise hi rahenge ...
-// (Poora code pichle response se le sakte hain, usme koi change nahi hai)
 export const signup = async (req, res) => {
     const { fullName, email, password, confirmPassword, role, termsAccepted } = req.body;
     if (!fullName || !email || !password || !confirmPassword || !role) { return res.status(400).json({ success: false, message: 'Please provide all fields' }); }
@@ -61,6 +53,7 @@ export const signup = async (req, res) => {
         sendTokenResponse(user, 201, res);
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
+
 export const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) { return res.status(400).json({ success: false, message: 'Please provide email and password' }); }
@@ -70,6 +63,7 @@ export const login = async (req, res) => {
         sendTokenResponse(user, 200, res);
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
+
 export const googleLogin = async (req, res) => {
     const { token, role } = req.body;
     try {
@@ -88,15 +82,18 @@ export const googleLogin = async (req, res) => {
         }
     } catch (error) { res.status(500).json({ success: false, message: 'Google Sign-In failed.' }); }
 };
+
 export const logout = (req, res) => {
     const options = getCookieOptions();
     options.expires = new Date(0);
     res.status(200).cookie('token', '', options).json({ success: true, message: 'Logged out successfully' });
 };
+
 export const getMe = async (req, res) => {
     const user = await User.findById(req.user.id);
     res.status(200).json({ success: true, data: { id: user._id, email: user.email, role: user.role } });
 };
+
 export const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     try {
@@ -107,6 +104,7 @@ export const updatePassword = async (req, res) => {
         res.status(200).json({ success: true, message: 'Password updated successfully' });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
+
 export const deleteAccount = async (req, res) => {
     const { password } = req.body;
     if (!password) { return res.status(400).json({ success: false, message: 'Password is required to delete account' }); }
