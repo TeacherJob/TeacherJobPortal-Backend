@@ -123,14 +123,14 @@ export const googleLogin = async (req, res) => {
 export const logout = (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
-    secure: true, // must match original
-    sameSite: 'none', // must match original
-    path: '/', // must match original
-    domain: 'teacher-job-portal-backend.vercel.app' // must match original
+    secure: true,
+    sameSite: 'none',
+    path: '/' // ✅ but ❌ no domain
   });
 
-  return res.status(200).json({ success: true, message: 'Logged out successfully' });
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
+
 
 
 export const getMe = async (req, res) => {
