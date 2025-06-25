@@ -23,16 +23,40 @@ connectDB();
 
 const app = express();
 
+// =================================================================
+// THE GUARANTEED FIX: DYNAMIC CORS CONFIGURATION
+// =================================================================
+
+// Yahan hum un sabhi URLs ki list banayenge jinhe hum anumati dena chahte hain.
+const whitelist = [
+    'http://localhost:8080', 
+    process.env.CORS_ORIGIN // Yeh aapke Vercel frontend URL ko .env file se lega
+];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN,
-  credentials: true,
+    credentials: true, // Cookies ke liye sabse zaroori
+    origin: function (origin, callback) {
+        // Agar request 'whitelist' me se kisi URL se hai, toh use allow karo
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
 };
 
+// CORS middleware ko in naye, dynamic options ke saath use karein
 app.use(cors(corsOptions));
+
+// Baaki ke middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+// =================================================================
+// ALL YOUR ROUTES
+// =================================================================
 app.use('/api/auth', authRoutes);
 app.use('/api/employer', employerRoutes);
 app.use('/api/college', collegeRoutes);
