@@ -17,14 +17,20 @@ const generateToken = (id, role) => {
 
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user._id, user.role);
-    const options = {
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+
+    const cookieOptions = {
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none'
+        path: '/',
     };
+
+    if (process.env.NODE_ENV === 'production') {
+        cookieOptions.secure = true;
+        cookieOptions.sameSite = 'None';
+    }
+
     res.status(statusCode)
-        .cookie('token', token, options)
+        .cookie('token', token, cookieOptions)
         .json({
             success: true,
             user: { id: user._id, email: user.email, role: user.role }
@@ -37,11 +43,9 @@ export const signup = async (req, res) => {
     if (!fullName || !email || !password || !confirmPassword || !role) {
         return res.status(400).json({ success: false, message: 'Please provide all fields' });
     }
-
     if (termsAccepted !== true) {
         return res.status(400).json({ success: false, message: 'You must accept the terms and conditions' });
     }
-
     if (password !== confirmPassword) {
         return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
@@ -86,14 +90,12 @@ export const login = async (req, res) => {
 
 export const googleLogin = async (req, res) => {
     const { token, role } = req.body;
-
     try {
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         const { email, name, picture } = ticket.getPayload();
-
         let user = await User.findOne({ email });
 
         if (user) {
@@ -121,11 +123,20 @@ export const googleLogin = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-    res.cookie('token', 'none', {
-        expires: new Date(Date.now() + 10 * 1000),
+    const cookieOptions = {
+        expires: new Date(0), // Set expiration to a past date
         httpOnly: true,
-    });
-    res.status(200).json({ success: true, message: 'Logged out successfully' });
+        path: '/',
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+        cookieOptions.secure = true;
+        cookieOptions.sameSite = 'None';
+    }
+
+    res.status(200)
+        .cookie('token', '', cookieOptions) // Set cookie to an empty value
+        .json({ success: true, message: 'Logged out successfully' });
 };
 
 export const getMe = async (req, res) => {
@@ -169,12 +180,21 @@ export const deleteAccount = async (req, res) => {
         }
 
         await user.deleteOne();
-
-        res.cookie('token', 'none', {
-            expires: new Date(Date.now() + 10 * 1000),
+        
+        const cookieOptions = {
+            expires: new Date(0),
             httpOnly: true,
-        });
-        res.status(200).json({ success: true, message: 'Account deleted successfully' });
+            path: '/',
+        };
+        if (process.env.NODE_ENV === 'production') {
+            cookieOptions.secure = true;
+            cookieOptions.sameSite = 'None';
+        }
+
+        res.status(200)
+            .cookie('token', '', cookieOptions)
+            .json({ success: true, message: 'Account deleted successfully' });
+
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
