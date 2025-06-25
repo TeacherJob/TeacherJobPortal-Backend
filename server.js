@@ -23,24 +23,16 @@ connectDB();
 
 const app = express();
 
-// =================================================================
-// THE GUARANTEED FIX: HARDCODED CORS CONFIGURATION
-// =================================================================
-// Hum yahan Vercel environment variable par bharosa nahi karenge.
-// Hum seedhe aapka frontend URL daal denge.
 const corsOptions = {
   origin: 'https://teacher-connect2.vercel.app',
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-// --- END OF THE FIX ---
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- ROUTES ---
 app.use('/api/auth', authRoutes);
 app.use('/api/employer', employerRoutes);
 app.use('/api/college', collegeRoutes);
