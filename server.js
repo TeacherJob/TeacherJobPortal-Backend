@@ -24,7 +24,11 @@ connectDB();
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:8080',
+  origin: [
+    'http://localhost:8080',
+    'https://teacher-connect2.vercel.app',
+    'https://teacher-connet1-1.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
