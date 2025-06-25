@@ -18,21 +18,17 @@ import resourceRoute from './admin/routes/resource.routes.js';
 import pressArticle from './admin/routes/pressArticle.routes.js';
 import PostjobRoutes from './employer/routes/Postjob.routes.js'
 
-
 dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors({
-  origin: [
-    'http://localhost:8080',
-    'https://teacher-connect2.vercel.app',
-    'https://teacher-connet1-1.vercel.app'
-  ],
+
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -48,11 +44,9 @@ app.use("/api/salary-guide", salaryGuideRoutes);
 app.use("/api/career-articles", careerArticleRoutes);
 app.use('/api/public', publicJobRoutes);
 app.use('/api/review', publicReviewRoutes);
-app.use('/api/resource',resourceRoute);
-app.use('/api/press-articles',pressArticle)
-app.use('/api/post-jobs',PostjobRoutes);
-
-
+app.use('/api/resource', resourceRoute);
+app.use('/api/press-articles', pressArticle);
+app.use('/api/post-jobs', PostjobRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');
